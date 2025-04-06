@@ -131,6 +131,18 @@ def parse_arguments() -> argparse.Namespace:
         choices=["ddp", "deepspeed", "fsdp"],
         help="Type of distributed training to use",
     )
+    parser.add_argument(
+        "--run_name",
+        type=str,
+        help="The name of the run for logging and tracking purposes."
+    )
+    parser.add_argument(
+        "--cache_dir",
+        type=str,
+        default="/data1/Mamba/HuggingFace_Cache",
+        help="The directory to store cached models and datasets."
+    )
+    
     return parser.parse_args()
 
 
@@ -167,6 +179,7 @@ def setup_dataset(
     tokenizer: Optional[PreTrainedTokenizer] = None,
     max_length: int = 512,
     pad_to_multiple_of_six: bool = False,
+    cache_dir: Optional[str] = None,
 ) -> Dataset:
     """
     Load and prepare dataset for causal language modeling.
@@ -186,9 +199,9 @@ def setup_dataset(
 
     # Load dataset from HuggingFace
     if subset_name is None:
-        dataset = load_dataset(dataset_name, trust_remote_code=True)
+        dataset = load_dataset(dataset_name, trust_remote_code=True, cache_dir=cache_dir)
     else:
-        dataset = load_dataset(dataset_name, subset_name, trust_remote_code=True)
+        dataset = load_dataset(dataset_name, subset_name, trust_remote_code=True, cache_dir=cache_dir)
 
     dist_print(f"⚡ Dataset loaded in {time.time() - start_time:.2f} seconds")
 
@@ -320,6 +333,8 @@ def setup_training_args(yaml_path=None, cli_args=None, **kwargs):
             )
         if hasattr(cli_args, "num_train_epochs"):
             cli_kwargs["num_train_epochs"] = cli_args.num_train_epochs
+        if hasattr(cli_args, "run_name"):
+            cli_kwargs["run_name"] = cli_args.run_name
 
         # Handle distributed training configurations
         if hasattr(cli_args, "distributed_type"):
@@ -452,6 +467,7 @@ def main() -> None:
         tokenizer,
         args.max_length,
         args.pad_to_multiple_of_six,
+        args.cache_dir,
     )
 
     # Initialize model
