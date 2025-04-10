@@ -184,6 +184,17 @@ def parse_arguments() -> argparse.Namespace:
         choices=["ddp", "deepspeed", "fsdp"],
         help="Type of distributed training to use",
     )
+    parser.add_argument(
+        "--run_name",
+        type=str,
+        help="The name of the run for logging and tracking purposes."
+    )
+    parser.add_argument(
+        "--cache_dir",
+        type=str,
+        default="/data1/Mamba/HuggingFace_Cache",
+        help="The directory to store cached models and datasets."
+    )
     return parser.parse_args()
 
 
@@ -196,6 +207,7 @@ def setup_dataset(
     seed: int = 42,
     num_folds: int = 0,
     fold_id: int = -1,
+    cache_dir: Optional[str] = None,
 ) -> Tuple[Union[DatasetDict, Dataset, IterableDatasetDict, IterableDataset], int]:
     """
     Load and prepare dataset for sequence understanding.
@@ -218,9 +230,9 @@ def setup_dataset(
 
     # Load dataset from HuggingFace
     if subset_name is None:
-        dataset = load_dataset(dataset_name, trust_remote_code=True)
+        dataset = load_dataset(dataset_name, trust_remote_code=True, cache_dir=cache_dir)
     else:
-        dataset = load_dataset(dataset_name, subset_name, trust_remote_code=True)
+        dataset = load_dataset(dataset_name, subset_name, trust_remote_code=True, cache_dir=cache_dir)
     dist_print(f"⚡ Dataset loaded in {time.time() - start_time:.2f} seconds")
 
     # Determine number of labels based on problem type
@@ -641,11 +653,13 @@ def setup_training_args(yaml_path=None, cli_args=None, **kwargs):
         if hasattr(cli_args, "seed"):
             cli_kwargs["seed"] = cli_args.seed
             cli_kwargs["data_seed"] = cli_args.seed
+        if hasattr(cli_args, "run_name"):
+            cli_kwargs["run_name"] = cli_args.run_name
 
         # Handle distributed training configurations
         if hasattr(cli_args, "distributed_type"):
             if cli_args.distributed_type == "deepspeed":
-                cli_kwargs["deepspeed"] = "configs/ds_configs/zero1.json"
+                cli_kwargs["deepspeed"] = "configs/ds_configs/zero2.json"
             elif cli_args.distributed_type == "fsdp":
                 cli_kwargs["fsdp"] = "shard_grad_op auto_wrap"
                 cli_kwargs["fsdp_config"] = "configs/ds_configs/fsdp.json"
