@@ -5,7 +5,7 @@ export TOKENIZERS_PARALLELISM=false
 
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate OpenRLHF
-cd /root/GENERator
+cd ~/GENERator
 
 MODEL_TYPE=GENERator-eukaryote-1.2b-base
 MODEL_NAME=/data1/Mamba/Model/Genome/GENERator/GENERator-eukaryote-1.2b-base
@@ -46,7 +46,7 @@ CUDA_VISIBLE_DEVICES=${GPU_DEVICES} torchrun --nproc_per_node=${NUM_GPUS_PER_NOD
     --batch_size $BATCH_SIZE \
     --learning_rate $LEARNING_RATE \
     --num_train_epochs $NUM_EPOCHS \
-    --max_length 1024 \
+    --max_length $MAX_LENGTH \
     --pad_to_multiple_of_six \
     --output_dir $OUTPUT_DIR \
     --run_name $EXPERIMENT_NAME \
