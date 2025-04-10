@@ -1,29 +1,37 @@
 # evaluation
 do_eval: true
-eval_strategy: "epoch"
-load_best_model_at_end: true
+eval_strategy: "steps"
+eval_steps: 100
+load_best_model_at_end: True
+metric_for_best_model: "mcc"
 
 # saving
-save_strategy: "epoch"
+save_strategy: "steps"
+save_steps: 100
 save_total_limit: 3
 
 # logging
 logging_strategy: "steps"
-logging_steps: 10
+logging_steps: 2
 
 # training
-num_train_epochs: 10000
+num_train_epochs: 100
 weight_decay: 0.1
-lr_scheduler_type: "reduce_lr_on_plateau"
-lr_scheduler_kwargs: {
-  "patience": 1,
-  "factor": 0.5,
-  "mode": null,
-}
+lr_scheduler_type: "cosine"
+# lr_scheduler_kwargs: {
+#   "patience": 1,
+#   "factor": 0.5,
+#   "mode": null,
+# }
 adam_beta1: 0.9
 adam_beta2: 0.995
 gradient_checkpointing: True
 gradient_checkpointing_kwargs: { "use_reentrant": False }
+optim: "adamw_torch_fused"
+warmup_ratio: 0.2
+ddp_timeout: 30000
+bf16: True
+fp16: False
 
 # dataset
 dataloader_num_workers: 4
@@ -31,3 +39,6 @@ remove_unused_columns: false
 
 push_to_hub: false
 report_to: [ "wandb" ]
+overwrite_output_dir: True
+seed: 42
+data_seed: 42
