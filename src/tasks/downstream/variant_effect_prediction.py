@@ -16,7 +16,7 @@ from transformers import (
     PreTrainedTokenizer,
     PreTrainedModel,
 )
-
+import json
 
 def parse_arguments() -> argparse.Namespace:
     """
@@ -177,7 +177,10 @@ def setup_model(
     start_time = time.time()
 
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
-    dtype = "bfloat16" if torch.cuda.get_device_capability()[0] >= 8 else "float32"
+    if "nucleotide-transformer" not in model_name:
+        dtype = torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float32
+    else:
+        dtype = torch.float32 
     model = AutoModelForCausalLM.from_pretrained(
         model_name, torch_dtype=dtype, trust_remote_code=True
     )
@@ -496,6 +499,23 @@ def main() -> None:
     minutes, seconds = divmod(total_time, 60)
     print(f"\n⏱️ Total execution time: {int(minutes)}m {seconds:.2f}s")
     print("✨ Completed successfully! ✨\n")
+    
+    # Create a dictionary with the evaluation results
+    results_dict = {
+        "model_name": args.model_name.split('/')[-1],
+        "AUROC": round(metrics["AUROC"], 4),
+        "AUPRC": round(metrics["AUPRC"], 4),
+        "args": vars(args)
+    }
+
+    # Define a path for saving the JSON file
+    json_output_path = os.path.splitext(args.output_path)[0] + "_metrics.json"
+
+    # Save the dictionary to a JSON file
+    with open(json_output_path, "w") as f:
+        json.dump(results_dict, f, indent=4)
+
+    print(f"📁 Metrics saved to JSON file at: {json_output_path}")
 
 
 if __name__ == "__main__":
